@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ベストワン授業料見積シミュレーター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <h1>ベストワン 授業料見積シミュレーター</h1>
+                <button id="open-config-btn" class="icon-btn" title="教室情報設定">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+                        </path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    教室設定
+                </button>
+                <button id="open-pricing-btn" class="icon-btn" title="授業料設定" style="margin-left: 10px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    授業料設定
+                </button>
+            </div>
+            <p>生徒一人ひとりに合わせた最適なプランを作成します</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Left Column: Settings -->
+            <section class="config-panel">
+
+                <!-- Document Type -->
+                <div class="form-group">
+                    <h2><span class="step-num">0</span> 書類種別</h2>
+                    <div class="toggle-group" id="doc-type-selector">
+                        <button type="button" class="toggle-btn active" data-value="estimate">見積書</button>
+                        <button type="button" class="toggle-btn" data-value="invoice">請求書</button>
+                    </div>
+                </div>
+
+                <!-- 1. 指導形態 -->
+                <div class="form-group">
+                    <h2><span class="step-num">1</span> 指導形態</h2>
+                    <div class="toggle-group" id="ratio-selector">
+                        <button type="button" class="toggle-btn active" data-value="1:2">講師1 : 生徒2 (標準)</button>
+                        <button type="button" class="toggle-btn" data-value="1:1">講師1 : 生徒1</button>
+                    </div>
+                </div>
+
+                <!-- 2. 学年 -->
+                <div class="form-group">
+                    <h2><span class="step-num">2</span> 学年</h2>
+                    <select id="grade-selector" class="premium-select">
+                        <option value="elem45">小学生 (45分)</option>
+                        <option value="elem80">小学生 (80分)</option>
+                        <option value="middle12" selected>中学1・2年生</option>
+                        <option value="middle3high12">中学3年・高校1・2年生</option>
+                        <option value="high3">高校3年生・既卒</option>
+                    </select>
+                </div>
+
+                <!-- 3. 科目・週講義数 -->
+                <div class="form-group">
+                    <h2><span class="step-num">3</span> 受講科目・回数</h2>
+                    <p class="helper-text">受講する科目を選択してください（選択数＝週回数となります）</p>
+
+                    <div class="subject-grid" id="subject-buttons">
+                        <button type="button" class="subject-btn" data-subject="数学">数学</button>
+                        <button type="button" class="subject-btn" data-subject="算数">算数</button>
+                        <button type="button" class="subject-btn" data-subject="英語">英語</button>
+                        <button type="button" class="subject-btn" data-subject="英検">英検</button>
+                        <button type="button" class="subject-btn" data-subject="国語">国語</button>
+                        <button type="button" class="subject-btn" data-subject="理科">理科</button>
+                        <button type="button" class="subject-btn" data-subject="社会">社会</button>
+                    </div>
+
+                    <div class="selected-summary">
+                        <span>週 <strong id="week-count-display">0</strong> 回</span>
+                        <span id="selected-list" class="subject-list-text"></span>
+                    </div>
+                </div>
+
+                <!-- 4. 入学金 -->
+                <div class="form-group">
+                    <h2><span class="step-num">4</span> 入学金・キャンペーン</h2>
+                    <div class="radio-group vertical">
+                        <label class="radio-label">
+                            <input type="radio" name="entrance-fee" value="full" checked>
+                            <span class="radio-custom"></span>
+                            <div class="radio-text">
+                                <span class="primary">通常入学</span>
+                                <span class="secondary">入学金が発生しますが、季節講習をプレゼント</span>
+                            </div>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="entrance-fee" value="waived">
+                            <span class="radio-custom"></span>
+                            <div class="radio-text">
+                                <span class="primary">入学金免除</span>
+                                <span class="secondary">季節講習受講、兄弟姉妹特典など</span>
+                            </div>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="entrance-fee" value="half">
+                            <span class="radio-custom"></span>
+                            <div class="radio-text">
+                                <span class="primary">半額免除</span>
+                                <span class="secondary">兄弟姉妹2人目など</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 5. 特別オプション -->
+                <div class="form-group">
+                    <h2><span class="step-num">5</span> オプション</h2>
+                    <label class="checkbox-card">
+                        <input type="checkbox" id="adjustment-fee">
+                        <div class="checkbox-content">
+                            <div class="checkbox-header">
+                                <span class="checkbox-title">授業調整費 / 優先予約</span>
+                            </div>
+                            <p class="checkbox-desc">人気講師の指名や、特定曜日・時間の優先確保権。</p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- 6. 季節講習 -->
+                <div class="form-group">
+                    <h2><span class="step-num">6</span> 季節講習お申込み</h2>
+                    <p class="helper-text">受講する教科のコマ数を入力してください。総コマ数に応じて単価が変動します。</p>
+
+                    <div class="seasonal-grid" id="seasonal-inputs">
+                        <!-- JS generated inputs for efficiency -->
+                    </div>
+
+                    <div class="tier-indicator">
+                        <div class="total-slots">総コマ数: <strong id="seasonal-total-slots">0</strong></div>
+                        <div class="current-unit-price">適用単価: <strong id="seasonal-unit-price">-</strong> 円</div>
+                    </div>
+                    <div class="tier-progress-bar">
+                        <div class="tier-fill" id="tier-fill" style="width: 0%"></div>
+                    </div>
+                    <p class="tier-hint" id="tier-hint">5コマ以上で適用開始</p>
+                </div>
+
+            </section>
+
+            <!-- Right Column: Estimate -->
+            <section class="estimate-panel">
+                <div class="sticky-card">
+                    <h2>概算お見積り</h2>
+
+                    <div class="line-items" id="line-items">
+                        <!-- Dynamic items -->
+                    </div>
+
+                    <div class="total-section">
+                        <div class="total-row">
+                            <span>月額授業料</span>
+                            <span id="monthly-tuition">0円</span>
+                        </div>
+                        <div class="total-row" id="adjustment-fee-row" style="display: none;">
+                            <span>授業調整費</span>
+                            <span id="adjustment-fee-display">0円</span>
+                        </div>
+                        <div class="total-row sub-total">
+                            <span>諸経費 (月額)</span>
+                            <span id="utility-fee">3,600円</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>月々のお支払い</span>
+                            <span id="monthly-total">0円</span>
+                        </div>
+                    </div>
+
+                    <div class="initial-cost-section">
+                        <h3>初回納入金目安</h3>
+                        <div class="total-row">
+                            <span>入学金</span>
+                            <span id="entrance-fee-display">0円</span>
+                        </div>
+
+                        <div class="initial-actions-box"
+                            style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #dbeafe;">
+                            <div style="margin-bottom: 10px;">
+                                <label
+                                    style="display: block; font-size: 0.85rem; color: #1e3a8a; margin-bottom: 5px; font-weight: bold;">初回振込期限</label>
+                                <input type="date" id="transfer-deadline"
+                                    style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #bfdbfe; border-radius: 4px; color: #1e40af;">
+                            </div>
+                            <a href="https://test-database-psi.vercel.app/" target="_blank" class="secondary-btn"
+                                style="display: block; text-align: center; text-decoration: none; width: 100%; box-sizing: border-box; background-color: #fff; border-color: #3b82f6; color: #3b82f6; margin-bottom: 10px;">
+                                教材費見積りサイト <i class="fas fa-external-link-alt"></i>
+                            </a>
+
+                            <div>
+                                <label
+                                    style="display: block; font-size: 0.85rem; color: #1e3a8a; margin-bottom: 5px; font-weight: bold;">教材費
+                                    (手入力)</label>
+                                <div style="display: flex; align-items: center;">
+                                    <input type="number" id="manual-material-fee" placeholder="0"
+                                        style="flex: 1; padding: 8px; border: 1px solid #bfdbfe; border-radius: 4px; color: #1e40af; ime-mode: disabled; text-align: right;"
+                                        min="0">
+                                    <span style="margin-left: 5px; color: #1e3a8a;">円</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="note" style="margin-top: 10px;">※教材費は上記サイトにて計算し、ここに入力してください。</p>
+                    </div>
+
+                    <div class="client-info-box">
+                        <input type="text" id="student-name" placeholder="生徒氏名" class="premium-input compact">
+                    </div>
+
+                    <button class="action-btn" id="generate-btn">見積書を作成する</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Printable Estimate Layout (Hidden on Screen) -->
+        <div id="printable-estimate" class="printable-sheet">
+            <div class="sheet-header">
+                <div class="header-left">
+                    <div class="title-block">
+                        <h1>授業料 御見積書</h1>
+                    </div>
+                    <div class="meta-block">
+                        <p>発行日: <span id="print-date"></span></p>
+                        <p>No: <span id="estimate-id"></span></p>
+                    </div>
+                </div>
+                <div class="header-right" id="print-company-info-container">
+                    <!-- Company Info Injected Here -->
+                </div>
+            </div>
+
+            <div class="recipient-section">
+                <h2 id="print-student-name">______ 様</h2>
+                <p>この度は、ベストワンへのお問い合わせ誠にありがとうございます。<br>
+                    以下の通り、授業料のお見積もりを申し上げます。<br>
+                    本状は初回納入金の請求書を兼ねております。ご入会の際は、下記期限までにお手続きをお願いいたします。<br>
+                    <span id="print-deadline-display"
+                        style="font-weight: bold; color: #e11d48; display: none; margin-top: 5px; display:inline-block;">
+                        初回お振込期限： <span id="print-deadline-date"></span>
+                    </span>
+                </p>
+            </div>
+
+            <table class="estimate-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>内容</th>
+                        <th>単価</th>
+                        <th>金額 (税込)</th>
+                    </tr>
+                </thead>
+                <tbody id="print-table-body">
+                    <!-- Dynamic Rows -->
+                </tbody>
+                <tfoot>
+                    <tr class="summary-row">
+                        <td colspan="3">月額授業料 合計</td>
+                        <td id="print-monthly-total">0円</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="remarks-section">
+                <h3>備考</h3>
+                <ul>
+                    <li>本状記載の「初回お振込金額」を入会諸費用として申し受けます。</li>
+                    <li>初回納入金は<strong>銀行振込</strong>、2ヶ月目以降は<strong>口座振替</strong>となります。</li>
+                    <li>教材費は別途必要となります（受講科目数により異なります）。</li>
+                    <li>季節講習期間（春・夏・冬）は、別途講習費が必要となります。</li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <div class="company-info">
+                    <h3>ECCの個別指導塾 ベストワン</h3>
+                    <p>住所: 〒000-0000 〇〇県〇〇市〇〇町1-1</p>
+                    <p>TEL: 00-0000-0000</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- Configuration Modal -->
+    <div id="config-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>請求元情報設定</h2>
+                <button id="close-config-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">入力内容はブラウザに自動保存されます。</p>
+
+                <div class="form-section">
+                    <label>会社ロゴ</label>
+                    <div class="logo-upload-area">
+                        <img id="logo-preview" src="" alt="ロゴプレビュー" class="logo-preview hidden">
+                        <div class="upload-controls">
+                            <input type="file" id="logo-input" accept="image/*">
+                            <button id="logo-clear-btn" class="secondary-btn small hidden">削除</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label>会社名 / 屋号</label>
+                    <input type="text" id="cfg-company" class="premium-input" placeholder="例: ECCベストワン・ジュニア藍住">
+                </div>
+
+                <div class="form-section">
+                    <label>郵便番号</label>
+                    <input type="text" id="cfg-zip" class="premium-input" placeholder="例: 771-1252">
+                </div>
+
+                <div class="form-section">
+                    <label>住所</label>
+                    <textarea id="cfg-address" class="premium-input" rows="2"
+                        placeholder="例: 徳島県板野郡藍住町矢上字北分82-1 テナント新居No.4"></textarea>
+                </div>
+
+                <div class="form-section">
+                    <label>電話番号</label>
+                    <input type="text" id="cfg-phone" class="premium-input" placeholder="例: 088-692-5483">
+                </div>
+
+                <div class="form-section">
+                    <label>登録番号 (インボイス)</label>
+                    <input type="text" id="cfg-invoice" class="premium-input" placeholder="例: T1234567890123">
+                </div>
+
+                <div class="form-section">
+                    <label>振込先口座情報</label>
+                    <textarea id="cfg-bank" class="premium-input" rows="3" placeholder="銀行名・支店名・口座番号・名義人など"></textarea>
+                </div>
+
+                <button id="save-config-btn" class="action-btn">保存して閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Modal (Moved to Root) -->
+    <div id="pricing-modal" class="modal-overlay">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2>授業料設定 (税込)</h2>
+                <button id="close-pricing-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                <p class="modal-desc">変更はブラウザに保存され、次回以降も適用されます。</p>
+
+                <h3>個別指導 1:2</h3>
+                <div class="table-scroll-container">
+                    <table class="pricing-edit-table" id="pricing-table-1-2">
+                        <thead>
+                            <tr>
+                                <th>対象</th>
+                                <th>分/コマ</th>
+                                <th>週1コマ</th>
+                                <th>週2コマ</th>
+                                <th>週3コマ</th>
+                                <th>週4コマ</th>
+                                <th>週5コマ</th>
+                                <th>週6コマ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>個別指導 1:1</h3>
+                <div class="table-scroll-container">
+                    <table class="pricing-edit-table" id="pricing-table-1-1">
+                        <thead>
+                            <tr>
+                                <th>対象</th>
+                                <th>分/コマ</th>
+                                <th>週1コマ</th>
+                                <th>週2コマ</th>
+                                <th>週3コマ</th>
+                                <th>週4コマ</th>
+                                <th>週5コマ</th>
+                                <th>週6コマ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-actions"
+                    style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <button id="reset-pricing-btn" class="secondary-btn"
+                            style="color: #666; border-color: #ccc; width: auto; padding: 10px 20px;">デフォルトに戻す</button>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="set-default-btn" class="secondary-btn"
+                            style="color: #2563eb; border-color: #2563eb; width: auto; padding: 10px 20px;">現在の設定をデフォルトにする</button>
+                        <button id="save-pricing-btn" class="action-btn"
+                            style="width: auto; padding: 10px 30px; margin: 0;">保存して閉じる</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
