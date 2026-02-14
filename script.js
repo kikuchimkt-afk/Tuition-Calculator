@@ -23,14 +23,6 @@ const ENTRANCE_FEES = {
     middle_high: 22000
 };
 
-const ADJUSTMENT_UNIT_PRICES = {
-    "elem45": 4840,
-    "elem80": 4840,
-    "middle12": 4840,
-    "middle3high12": 4840,
-    "high3": 4840
-};
-
 const CONFIG_KEY = 'tuition_config';
 const PRICING_KEY = 'tuition_pricing';
 const CUSTOM_DEFAULT_KEY = 'tuition_pricing_default';
@@ -346,6 +338,7 @@ function setDefaultPricing() {
 function resetPricing() {
     if (confirm('現在編集中の内容を破棄し、デフォルト設定に戻しますか？')) {
         const savedDefault = localStorage.getItem(CUSTOM_DEFAULT_KEY);
+
         if (savedDefault) {
             PRICING = JSON.parse(savedDefault);
             console.log("Restored from Custom Default");
@@ -585,7 +578,9 @@ function updateCalculations() {
     const utility = 3600;
 
     // 3. Adjustment
-    const adjUnit = ADJUSTMENT_UNIT_PRICES[state.grade] || 4840;
+    // Use the 7th element (index 6, seasonal/concentrated unit price) of the 1:2 pricing for the current grade
+    const pricingRow1to2 = PRICING["1:2"][state.grade];
+    const adjUnit = (pricingRow1to2 && pricingRow1to2.length > 6) ? pricingRow1to2[6] : 4840;
     const adjustmentTotal = state.adjustment ? adjUnit : 0;
 
     // 4. Entrance
