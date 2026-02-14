@@ -1,11 +1,11 @@
 ﻿// Default Pricing Data (Fallback - includes 7th element: seasonal/concentrated unit price)
 const DEFAULT_PRICING = {
     "1:2": {
-        "elem45": [9080, 17180, 24440, 30980, 36660, 41870, 2420],
-        "elem80": [16090, 30490, 43440, 55060, 65220, 74420, 4235],
-        "middle12": [17550, 33400, 47550, 60260, 71510, 81430, 4598],
-        "middle3high12": [18510, 35090, 50090, 63280, 75140, 85670, 4840],
-        "high3": [19360, 36910, 52510, 66550, 79010, 89900, 5082]
+        "elem45": [9080, 17180, 24440, 30980, 36660, 41870, 2420, 2420],
+        "elem80": [16090, 30490, 43440, 55060, 65220, 74420, 4235, 4235],
+        "middle12": [17550, 33400, 47550, 60260, 71510, 81430, 4598, 4598],
+        "middle3high12": [18510, 35090, 50090, 63280, 75140, 85670, 4840, 4840],
+        "high3": [19360, 36910, 52510, 66550, 79010, 89900, 5082, 5082]
     },
     "1:1": {
         "elem45": [15850, 30130, 42830, 54210, 64370, 73450, 4235],
@@ -201,20 +201,19 @@ function loadPricing() {
         const saved = localStorage.getItem(PRICING_KEY);
         if (saved) {
             const parsed = JSON.parse(saved);
-            // Validation: Check if it has 7 elements, if not (legacy data), migrate
-            if (parsed["1:2"]["elem45"].length < 7) {
-                console.log("Legacy pricing data detected. Migrating...");
-                PRICING = JSON.parse(JSON.stringify(DEFAULT_PRICING));
-
-                // Append defaults to existing data if possible, but simpler to just use defaults + user values where possible?
-                // Actually, let's just append the default 7th column to the user's existing 6 columns.
-                Object.keys(parsed).forEach(ratio => {
-                    if (DEFAULT_PRICING[ratio]) {
-                        Object.keys(parsed[ratio]).forEach(grade => {
-                            if (parsed[ratio][grade] && parsed[ratio][grade].length === 6 && DEFAULT_PRICING[ratio][grade]) {
-                                parsed[ratio][grade].push(DEFAULT_PRICING[ratio][grade][6]);
-                            }
-                        });
+            // Validation: Check if it has 8 elements (for 1:2), if not, migrate
+            if (parsed["1:2"]["elem45"].length < 8) {
+                console.log("Legacy pricing data detected (v2). Migrating...");
+                // Append Index 7 (Option Unit Price) copying Index 6 (Seasonal Unit Price)
+                Object.keys(parsed["1:2"]).forEach(grade => {
+                    if (parsed["1:2"][grade] && parsed["1:2"][grade].length >= 7) {
+                        // Ensure we don't duplicate if run multiple times erroneously, though length check prevents it
+                        if (parsed["1:2"][grade].length === 7) {
+                            parsed["1:2"][grade].push(parsed["1:2"][grade][6]);
+                        }
+                    } else if (DEFAULT_PRICING["1:2"][grade]) {
+                        // Fallback to default if totally broken
+                        parsed["1:2"][grade] = [...DEFAULT_PRICING["1:2"][grade]];
                     }
                 });
                 PRICING = parsed;
@@ -262,18 +261,32 @@ function renderPricingModal() {
         // Ensure header has 1コマ単価 (Check if already added)
         // Reset header first to ensure clean state
         if (theadTr) {
-            // Reset to base cols
-            theadTr.innerHTML = `
-                <th>対象</th>
-                <th>分/コマ</th>
-                <th>週1コマ</th>
-                <th>週2コマ</th>
-                <th>週3コマ</th>
-                <th>週4コマ</th>
-                <th>週5コマ</th>
-                <th>週6コマ</th>
-                <th>1コマ単価</th>
-             `;
+            if (ratio === "1:2") {
+                theadTr.innerHTML = `
+                    <th>対象</th>
+                    <th>分/コマ</th>
+                    <th>週1コマ</th>
+                    <th>週2コマ</th>
+                    <th>週3コマ</th>
+                    <th>週4コマ</th>
+                    <th>週5コマ</th>
+                    <th>週6コマ</th>
+                    <th>1コマ単価</th>
+                    <th>OP単価</th>
+                 `;
+            } else {
+                theadTr.innerHTML = `
+                    <th>対象</th>
+                    <th>分/コマ</th>
+                    <th>週1コマ</th>
+                    <th>週2コマ</th>
+                    <th>週3コマ</th>
+                    <th>週4コマ</th>
+                    <th>週5コマ</th>
+                    <th>週6コマ</th>
+                    <th>1コマ単価</th>
+                 `;
+            }
         }
 
         if (!tbody) return;
@@ -588,14 +601,23 @@ function updateCalculations() {
     const utility = 3600;
 
     const pricingRow1to2 = PRICING["1:2"][state.grade];
-    const unitPrice1to2 = (pricingRow1to2 && pricingRow1to2.length > 6) ? pricingRow1to2[6] : 4840;
+    // 3. Adjustment & Group Training
+    // Use the 8th element (index 7, Option Unit Price) of the 1:2 pricing for the current grade
+    // Fallback to index 6 (Seasonal) if index 7 doesn't exist (shouldn't happen with migration)
+    let unitPriceOption = 4840;
 
-    // 3. Adjustment
-    const adjUnit = unitPrice1to2;
-    const adjustmentTotal = state.adjustment ? adjUnit : 0;
+    if (pricingRow1to2) {
+        if (pricingRow1to2.length > 7) {
+            unitPriceOption = pricingRow1to2[7];
+        } else if (pricingRow1to2.length > 6) {
+            unitPriceOption = pricingRow1to2[6];
+        }
+    }
 
-    // Group Training (Unit Price * 2)
-    const groupTrainingTotal = state.groupTraining ? (unitPrice1to2 * 2) : 0;
+    const adjustmentTotal = state.adjustment ? unitPriceOption : 0;
+
+    // Group Training (Option Unit Price * 2)
+    const groupTrainingTotal = state.groupTraining ? (unitPriceOption * 2) : 0;
 
     // 4. Entrance
     let entranceBase = (state.grade.startsWith('elem')) ? ENTRANCE_FEES.elem : ENTRANCE_FEES.middle_high;
