@@ -82,10 +82,11 @@ let state = {
     count: 0,
     subjects: [],
     adjustment: false,
+    groupTraining: false,
     entranceType: 'full',
     seasonal: {},
     calc: {
-        tuition: 0, utility: 0, adjustment: 0,
+        tuition: 0, utility: 0, adjustment: 0, groupTraining: 0,
         entranceBase: 0, entranceDiscount: 0, entranceFinal: 0,
         material: 0, seasonalSlots: 0, seasonalUnit: 0, seasonalCost: 0,
         monthlyTotal: 0, oneTimeTotal: 0, grandTotal: 0
@@ -105,6 +106,7 @@ function init() {
     // Selects & Inputs (Corrected IDs)
     els.gradeSelect = document.getElementById('grade-selector');
     els.adjustmentCheck = document.getElementById('adjustment-fee');
+    els.groupTrainingCheck = document.getElementById('group-training');
     // els.materialInput removed (Original)
     els.manualMaterialInput = document.getElementById('manual-material-fee');
     els.entranceRadios = document.getElementsByName('entrance-fee');
@@ -503,6 +505,14 @@ function setupListeners() {
         });
     }
 
+    // Group Training
+    if (els.groupTrainingCheck) {
+        els.groupTrainingCheck.addEventListener('change', (e) => {
+            state.groupTraining = e.target.checked;
+            updateCalculations();
+        });
+    }
+
     // Entrance
     if (els.entranceRadios) {
         Array.from(els.entranceRadios).forEach(r => {
@@ -577,11 +587,15 @@ function updateCalculations() {
     // 2. Utility
     const utility = 3600;
 
-    // 3. Adjustment
-    // Use the 7th element (index 6, seasonal/concentrated unit price) of the 1:2 pricing for the current grade
     const pricingRow1to2 = PRICING["1:2"][state.grade];
-    const adjUnit = (pricingRow1to2 && pricingRow1to2.length > 6) ? pricingRow1to2[6] : 4840;
+    const unitPrice1to2 = (pricingRow1to2 && pricingRow1to2.length > 6) ? pricingRow1to2[6] : 4840;
+
+    // 3. Adjustment
+    const adjUnit = unitPrice1to2;
     const adjustmentTotal = state.adjustment ? adjUnit : 0;
+
+    // Group Training (Unit Price * 2)
+    const groupTrainingTotal = state.groupTraining ? (unitPrice1to2 * 2) : 0;
 
     // 4. Entrance
     let entranceBase = (state.grade.startsWith('elem')) ? ENTRANCE_FEES.elem : ENTRANCE_FEES.middle_high;
@@ -660,20 +674,32 @@ function updateCalculations() {
         }
     }
 
+    // Group Training Row Logic
+    const groupRow = document.getElementById('group-training-row');
+    const groupDisplay = document.getElementById('group-training-display');
+    if (groupRow && groupDisplay) {
+        if (groupTrainingTotal > 0) {
+            groupRow.style.display = 'flex';
+            groupDisplay.textContent = `${groupTrainingTotal.toLocaleString()}円`;
+        } else {
+            groupRow.style.display = 'none';
+        }
+    }
+
     if (els.utilityFee) els.utilityFee.textContent = `${utility.toLocaleString()}円`;
-    if (els.monthlyTotal) els.monthlyTotal.textContent = `${(tuition + adjustmentTotal + utility).toLocaleString()}円`;
+    if (els.monthlyTotal) els.monthlyTotal.textContent = `${(tuition + adjustmentTotal + groupTrainingTotal + utility).toLocaleString()}円`;
     if (els.entranceFeeDisplay) els.entranceFeeDisplay.textContent = `${entranceFinal.toLocaleString()}円`;
 
     // State Update
     state.calc = {
-        tuition, utility, adjustment: adjustmentTotal,
+        tuition, utility, adjustment: adjustmentTotal, groupTraining: groupTrainingTotal,
         entranceBase, entranceDiscount, entranceFinal,
         material: materialFee,
         seasonalSlots: seasonalTotalSlots, seasonalUnit: seasonalUnitPrice, seasonalCost: seasonalTotalCost,
         seasonalDiscount, // New property
-        monthlyTotal: (tuition + adjustmentTotal + utility),
+        monthlyTotal: (tuition + adjustmentTotal + groupTrainingTotal + utility),
         oneTimeTotal: (entranceFinal + materialFee + seasonalTotalCost - seasonalDiscount),
-        grandTotal: (tuition + adjustmentTotal + utility) + entranceFinal + materialFee + seasonalTotalCost - seasonalDiscount
+        grandTotal: (tuition + adjustmentTotal + groupTrainingTotal + utility) + entranceFinal + materialFee + seasonalTotalCost - seasonalDiscount
     };
 }
 
@@ -786,7 +812,10 @@ function generateEstimate() {
     if (state.calc.adjustment > 0) {
         addRow('授業調整費', '指定・優先予約権', state.calc.adjustment, state.calc.adjustment);
     }
-    if (state.count > 0 || state.calc.seasonalSlots > 0) {
+    if (state.calc.groupTraining > 0) {
+        addRow('グループ指導', '追加', state.calc.groupTraining, state.calc.groupTraining);
+    }
+    if (state.count > 0 || state.calc.seasonalSlots > 0 || state.calc.groupTraining > 0) {
         addRow('諸経費', 'システム管理費・設備費として', 3600, 3600);
     }
     addTotalRow('月額授業料 合計', state.calc.monthlyTotal);

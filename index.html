@@ -131,6 +131,15 @@
                             <p class="checkbox-desc">人気講師の指名や、特定曜日・時間の優先確保権。</p>
                         </div>
                     </label>
+                    <label class="checkbox-card" style="margin-top: 10px;">
+                        <input type="checkbox" id="group-training">
+                        <div class="checkbox-content">
+                            <div class="checkbox-header">
+                                <span class="checkbox-title">グループ指導</span>
+                            </div>
+                            <p class="checkbox-desc">グループ指導を追加 (1コマ単価×2)</p>
+                        </div>
+                    </label>
                 </div>
 
                 <!-- 6. 季節講習 -->
@@ -171,6 +180,10 @@
                         <div class="total-row" id="adjustment-fee-row" style="display: none;">
                             <span>授業調整費</span>
                             <span id="adjustment-fee-display">0円</span>
+                        </div>
+                        <div class="total-row" id="group-training-row" style="display: none;">
+                            <span>グループ指導</span>
+                            <span id="group-training-display">0円</span>
                         </div>
                         <div class="total-row sub-total">
                             <span>諸経費 (月額)</span>
@@ -222,7 +235,7 @@
                         <input type="text" id="student-name" placeholder="生徒氏名" class="premium-input compact">
                     </div>
 
-                    <button class="action-btn" id="generate-btn">見積書を作成する</button>
+                    <button class="action-btn" id="generate-btn">作成する</button>
                 </div>
             </section>
         </main>
