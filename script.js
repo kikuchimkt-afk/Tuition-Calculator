@@ -832,7 +832,7 @@ function generateEstimate() {
         addRow('授業料', desc, state.calc.tuition, state.calc.tuition);
     }
     if (state.calc.adjustment > 0) {
-        addRow('授業調整費', '指定・優先予約権', state.calc.adjustment, state.calc.adjustment);
+        addRow('学習サポート費', '', state.calc.adjustment, state.calc.adjustment);
     }
     if (state.calc.groupTraining > 0) {
         addRow('グループ指導', '追加', state.calc.groupTraining, state.calc.groupTraining);
