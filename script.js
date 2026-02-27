@@ -83,10 +83,11 @@ let state = {
     subjects: [],
     adjustment: false,
     groupTraining: false,
+    fiveSubjectPack: false,
     entranceType: 'full',
     seasonal: {},
     calc: {
-        tuition: 0, utility: 0, adjustment: 0, groupTraining: 0,
+        tuition: 0, utility: 0, adjustment: 0, groupTraining: 0, fiveSubjectPack: 0,
         entranceBase: 0, entranceDiscount: 0, entranceFinal: 0,
         material: 0, seasonalSlots: 0, seasonalUnit: 0, seasonalCost: 0,
         monthlyTotal: 0, oneTimeTotal: 0, grandTotal: 0
@@ -107,6 +108,7 @@ function init() {
     els.gradeSelect = document.getElementById('grade-selector');
     els.adjustmentCheck = document.getElementById('adjustment-fee');
     els.groupTrainingCheck = document.getElementById('group-training');
+    els.fiveSubjectPackCheck = document.getElementById('five-subject-pack');
     // els.materialInput removed (Original)
     els.manualMaterialInput = document.getElementById('manual-material-fee');
     els.entranceRadios = document.getElementsByName('entrance-fee');
@@ -526,6 +528,14 @@ function setupListeners() {
         });
     }
 
+    // Five Subject Pack
+    if (els.fiveSubjectPackCheck) {
+        els.fiveSubjectPackCheck.addEventListener('change', (e) => {
+            state.fiveSubjectPack = e.target.checked;
+            updateCalculations();
+        });
+    }
+
     // Entrance
     if (els.entranceRadios) {
         Array.from(els.entranceRadios).forEach(r => {
@@ -619,16 +629,23 @@ function updateCalculations() {
     // Group Training (Option Unit Price * 2)
     const groupTrainingTotal = state.groupTraining ? (unitPriceOption * 2) : 0;
 
+    // Five Subject Pack (Option Unit Price * 6)
+    const fiveSubjectPackTotal = state.fiveSubjectPack ? (unitPriceOption * 6) : 0;
+
     // 4. Entrance
     let entranceBase = (state.grade.startsWith('elem')) ? ENTRANCE_FEES.elem : ENTRANCE_FEES.middle_high;
     let entranceFinal = entranceBase;
     let entranceDiscount = 0;
 
-    if (state.entranceType === 'half') {
+    if (state.entranceType === 'continuing') {
+        // 継続生：入学金不要
+        entranceBase = 0;
+        entranceFinal = 0;
+        entranceDiscount = 0;
+    } else if (state.entranceType === 'half') {
         entranceDiscount = entranceBase / 2;
         entranceFinal = entranceBase / 2;
-    }
-    if (state.entranceType === 'waived') {
+    } else if (state.entranceType === 'waived') {
         entranceDiscount = entranceBase;
         entranceFinal = 0;
     }
@@ -708,20 +725,32 @@ function updateCalculations() {
         }
     }
 
+    // Five Subject Pack Row Logic
+    const fiveSubjRow = document.getElementById('five-subject-pack-row');
+    const fiveSubjDisplay = document.getElementById('five-subject-pack-display');
+    if (fiveSubjRow && fiveSubjDisplay) {
+        if (fiveSubjectPackTotal > 0) {
+            fiveSubjRow.style.display = 'flex';
+            fiveSubjDisplay.textContent = `${fiveSubjectPackTotal.toLocaleString()}円`;
+        } else {
+            fiveSubjRow.style.display = 'none';
+        }
+    }
+
     if (els.utilityFee) els.utilityFee.textContent = `${utility.toLocaleString()}円`;
-    if (els.monthlyTotal) els.monthlyTotal.textContent = `${(tuition + adjustmentTotal + groupTrainingTotal + utility).toLocaleString()}円`;
+    if (els.monthlyTotal) els.monthlyTotal.textContent = `${(tuition + adjustmentTotal + groupTrainingTotal + fiveSubjectPackTotal + utility).toLocaleString()}円`;
     if (els.entranceFeeDisplay) els.entranceFeeDisplay.textContent = `${entranceFinal.toLocaleString()}円`;
 
     // State Update
     state.calc = {
-        tuition, utility, adjustment: adjustmentTotal, groupTraining: groupTrainingTotal,
+        tuition, utility, adjustment: adjustmentTotal, groupTraining: groupTrainingTotal, fiveSubjectPack: fiveSubjectPackTotal,
         entranceBase, entranceDiscount, entranceFinal,
         material: materialFee,
         seasonalSlots: seasonalTotalSlots, seasonalUnit: seasonalUnitPrice, seasonalCost: seasonalTotalCost,
         seasonalDiscount, // New property
-        monthlyTotal: (tuition + adjustmentTotal + groupTrainingTotal + utility),
+        monthlyTotal: (tuition + adjustmentTotal + groupTrainingTotal + fiveSubjectPackTotal + utility),
         oneTimeTotal: (entranceFinal + materialFee + seasonalTotalCost - seasonalDiscount),
-        grandTotal: (tuition + adjustmentTotal + groupTrainingTotal + utility) + entranceFinal + materialFee + seasonalTotalCost - seasonalDiscount
+        grandTotal: (tuition + adjustmentTotal + groupTrainingTotal + fiveSubjectPackTotal + utility) + entranceFinal + materialFee + seasonalTotalCost - seasonalDiscount
     };
 }
 
@@ -837,7 +866,10 @@ function generateEstimate() {
     if (state.calc.groupTraining > 0) {
         addRow('グループ指導', '追加', state.calc.groupTraining, state.calc.groupTraining);
     }
-    if (state.count > 0 || state.calc.seasonalSlots > 0 || state.calc.groupTraining > 0) {
+    if (state.calc.fiveSubjectPack > 0) {
+        addRow('５教科対応指導パック', '５教科対応', state.calc.fiveSubjectPack, state.calc.fiveSubjectPack);
+    }
+    if (state.count > 0 || state.calc.seasonalSlots > 0 || state.calc.groupTraining > 0 || state.calc.fiveSubjectPack > 0) {
         addRow('諸経費', 'システム管理費・設備費として', 3600, 3600);
     }
     addTotalRow('月額授業料 合計', state.calc.monthlyTotal);
@@ -856,14 +888,16 @@ function generateEstimate() {
         }
     }
 
-    if (state.entranceType !== 'waived') {
+    if (state.entranceType === 'continuing') {
+        // 継続生：入学金の行を表示しない
+    } else if (state.entranceType === 'waived') {
+        addRow('入学金', '新規入会', state.calc.entranceBase, state.calc.entranceBase);
+        addRow('入学金免除', '全額免除特典', '', state.calc.entranceDiscount, true);
+    } else {
         addRow('入学金', '新規入会', state.calc.entranceBase, state.calc.entranceBase);
         if (state.entranceType === 'half') {
             addRow('入学金免除', '半額免除特典', '', state.calc.entranceDiscount, true);
         }
-    } else {
-        addRow('入学金', '新規入会', state.calc.entranceBase, state.calc.entranceBase);
-        addRow('入学金免除', '全額免除特典', '', state.calc.entranceDiscount, true);
     }
 
     if (state.calc.material > 0) {

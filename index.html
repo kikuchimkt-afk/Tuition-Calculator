@@ -102,6 +102,14 @@
                             </div>
                         </label>
                         <label class="radio-label">
+                            <input type="radio" name="entrance-fee" value="continuing">
+                            <span class="radio-custom"></span>
+                            <div class="radio-text">
+                                <span class="primary">継続生</span>
+                                <span class="secondary">在籍中の生徒のため入学金不要</span>
+                            </div>
+                        </label>
+                        <label class="radio-label">
                             <input type="radio" name="entrance-fee" value="waived">
                             <span class="radio-custom"></span>
                             <div class="radio-text">
@@ -139,6 +147,15 @@
                                 <span class="checkbox-title">グループ指導</span>
                             </div>
                             <p class="checkbox-desc">グループ指導を追加 (1コマ単価×2)</p>
+                        </div>
+                    </label>
+                    <label class="checkbox-card" style="margin-top: 10px;">
+                        <input type="checkbox" id="five-subject-pack">
+                        <div class="checkbox-content">
+                            <div class="checkbox-header">
+                                <span class="checkbox-title">５教科対応指導パック</span>
+                            </div>
+                            <p class="checkbox-desc">５教科対応の指導パックを追加 (1コマ単価×6)</p>
                         </div>
                     </label>
                 </div>
@@ -185,6 +202,10 @@
                         <div class="total-row" id="group-training-row" style="display: none;">
                             <span>グループ指導</span>
                             <span id="group-training-display">0円</span>
+                        </div>
+                        <div class="total-row" id="five-subject-pack-row" style="display: none;">
+                            <span>５教科対応指導パック</span>
+                            <span id="five-subject-pack-display">0円</span>
                         </div>
                         <div class="total-row sub-total">
                             <span>諸経費 (月額)</span>
