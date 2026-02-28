@@ -220,9 +220,10 @@ h2 {
     border-color: var(--primary-light);
 }
 
-.checkbox-card input {
+.checkbox-card>input[type="checkbox"] {
     margin-top: 5px;
     transform: scale(1.2);
+    flex-shrink: 0;
 }
 
 .checkbox-content {
