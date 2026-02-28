@@ -241,6 +241,29 @@ h2 {
     color: var(--primary);
 }
 
+.option-label-input {
+    border: 1px solid transparent;
+    background: transparent;
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    padding: 2px 4px;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: text;
+}
+
+.option-label-input:focus {
+    border-color: var(--primary-light);
+    background: white;
+    outline: none;
+}
+
+.option-label-input:hover {
+    border-color: var(--border);
+}
+
 .checkbox-desc {
     margin: 0;
     font-size: 0.85rem;

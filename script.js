@@ -775,7 +775,17 @@ function generateEstimate() {
         }
     }
 
-    if (state.docType === 'invoice') {
+    const isContinuing = state.entranceType === 'continuing';
+
+    if (isContinuing) {
+        // 継続生用の出力
+        titleEl.textContent = '授業料のご案内';
+        let html = `いつもベストワンをご利用いただき誠にありがとうございます。<br>
+以下の通り、新年度の授業料をご案内申し上げます。<br>
+内容をご確認いただきますようお願いいたします。<br>`;
+        recipientP.innerHTML = html;
+
+    } else if (state.docType === 'invoice') {
         titleEl.textContent = '授業料 御見積書 兼 御請求書';
         let html = `この度は、ベストワンへのお問い合わせ誠にありがとうございます。<br>
 以下の通り、授業料のお見積もりを申し上げます。<br>
@@ -789,7 +799,7 @@ function generateEstimate() {
         recipientP.innerHTML = html;
 
     } else {
-        // Estimate
+        // 見積書（新規入会）
         titleEl.textContent = '授業料 御見積書';
         let html = `この度は、ベストワンへのお問い合わせ誠にありがとうございます。<br>
 以下の通り、授業料のお見積もりを申し上げます。<br>
@@ -860,14 +870,19 @@ function generateEstimate() {
     if (state.count > 0) {
         addRow('授業料', desc, state.calc.tuition, state.calc.tuition);
     }
+    // カスタム名目を取得
+    const adjustmentLabel = (document.getElementById('adjustment-fee-label')?.value || '学習サポート費').trim();
+    const groupTrainingLabel = (document.getElementById('group-training-label')?.value || 'グループ指導').trim();
+    const fiveSubjectPackLabel = (document.getElementById('five-subject-pack-label')?.value || '５教科対応指導パック').trim();
+
     if (state.calc.adjustment > 0) {
-        addRow('学習サポート費', '', state.calc.adjustment, state.calc.adjustment);
+        addRow(adjustmentLabel, '', state.calc.adjustment, state.calc.adjustment);
     }
     if (state.calc.groupTraining > 0) {
-        addRow('グループ指導', '追加', state.calc.groupTraining, state.calc.groupTraining);
+        addRow(groupTrainingLabel, '', state.calc.groupTraining, state.calc.groupTraining);
     }
     if (state.calc.fiveSubjectPack > 0) {
-        addRow('５教科対応指導パック', '５教科対応', state.calc.fiveSubjectPack, state.calc.fiveSubjectPack);
+        addRow(fiveSubjectPackLabel, '', state.calc.fiveSubjectPack, state.calc.fiveSubjectPack);
     }
     if (state.count > 0 || state.calc.seasonalSlots > 0 || state.calc.groupTraining > 0 || state.calc.fiveSubjectPack > 0) {
         addRow('諸経費', 'システム管理費・設備費として', 3600, 3600);
@@ -904,10 +919,25 @@ function generateEstimate() {
         addRow('教材費', '通年テキスト代', state.calc.material, state.calc.material);
     }
 
-    addTotalRow('入会時諸費用 合計 (入学金・季節講習・教材費)', state.calc.oneTimeTotal);
+    if (isContinuing) {
+        // 継続生：教材費や季節講習のみの場合の合計ラベル
+        if (state.calc.material > 0 || state.calc.seasonalSlots > 0) {
+            addTotalRow('その他費用 合計 (季節講習・教材費)', state.calc.oneTimeTotal);
+        }
+    } else {
+        addTotalRow('入会時諸費用 合計 (入学金・季節講習・教材費)', state.calc.oneTimeTotal);
+    }
 
     // 3. Grand Total
-    addTotalRow('初回お振込金額 合計', state.calc.grandTotal, true);
+    if (isContinuing) {
+        // 継続生：月額合計のみ表示（初回振込は不要）
+        // 教材費等がある場合はそれも含む
+        if (state.calc.material > 0 || state.calc.seasonalSlots > 0) {
+            addTotalRow('合計金額', state.calc.grandTotal, true);
+        }
+    } else {
+        addTotalRow('初回お振込金額 合計', state.calc.grandTotal, true);
+    }
 
     // Company & Bank
     const companyContainer = document.getElementById('print-company-info-container');
@@ -935,21 +965,60 @@ function generateEstimate() {
         `;
     }
 
+    // 備考セクションの内容を書き換え
     const remarksSection = document.querySelector('.remarks-section');
+    const remarksList = remarksSection.querySelector('ul');
+    if (remarksList) {
+        if (isContinuing) {
+            // 継続生用の備考
+            remarksList.innerHTML = `
+                <li>本状記載の金額は新年度の月額授業料のご案内です。</li>
+                <li>お支払いは引き続き<strong>口座振替</strong>となります。</li>
+                <li>教材費は別途必要となります（受講科目数により異なります）。</li>
+                <li>季節講習期間（春・夏・冬）は、別途講習費が必要となります。</li>
+            `;
+        } else {
+            // 新規入会用の備考（デフォルト）
+            remarksList.innerHTML = `
+                <li>本状記載の「初回お振込金額」を入会諸費用として申し受けます。</li>
+                <li>初回納入金は<strong>銀行振込</strong>、2ヶ月目以降は<strong>口座振替</strong>となります。</li>
+                <li>教材費は別途必要となります（受講科目数により異なります）。</li>
+                <li>季節講習期間（春・夏・冬）は、別途講習費が必要となります。</li>
+            `;
+        }
+
+        // 自由記述の備考を追加
+        const customRemarks = document.getElementById('custom-remarks');
+        if (customRemarks && customRemarks.value.trim()) {
+            const lines = customRemarks.value.trim().split('\n');
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed) {
+                    const li = document.createElement('li');
+                    li.textContent = trimmed;
+                    remarksList.appendChild(li);
+                }
+            });
+        }
+    }
+
     const existingBank = document.getElementById('print-bank-info');
     if (existingBank) existingBank.remove();
 
-    const bankDiv = document.createElement('div');
-    bankDiv.id = 'print-bank-info';
-    bankDiv.style.marginTop = '10px'; /* Compact */
-    bankDiv.style.paddingTop = '5px';
-    bankDiv.style.borderTop = '1px dashed #ccc';
-    bankDiv.style.fontSize = '8.5pt'; /* Smaller */
-    bankDiv.innerHTML = `
-        <strong>【お振込先】</strong>
-        <div style="margin-top: 3px; line-height: 1.3;">${bankHtml}</div>
-    `;
-    remarksSection.appendChild(bankDiv);
+    // 継続生の場合は振込先を表示しない（口座振替のため）
+    if (!isContinuing) {
+        const bankDiv = document.createElement('div');
+        bankDiv.id = 'print-bank-info';
+        bankDiv.style.marginTop = '10px'; /* Compact */
+        bankDiv.style.paddingTop = '5px';
+        bankDiv.style.borderTop = '1px dashed #ccc';
+        bankDiv.style.fontSize = '8.5pt'; /* Smaller */
+        bankDiv.innerHTML = `
+            <strong>【お振込先】</strong>
+            <div style="margin-top: 3px; line-height: 1.3;">${bankHtml}</div>
+        `;
+        remarksSection.appendChild(bankDiv);
+    }
 
     window.print();
 }
